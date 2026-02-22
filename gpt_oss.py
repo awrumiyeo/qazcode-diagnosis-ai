@@ -15,19 +15,20 @@ def _ensure_configured():
 
 def generate_followup_questions(symptoms: str, n: int = 3) -> List[str]:
     """
-    Uses Kazcode GPT-OSS 120B via LOCAL endpoint (no external calls).
-    Returns short follow-up questions.
+    Использует Kazcode GPT-OSS 120B через ЛОКАЛЬНЫЙ endpoint (без внешних вызовов).
+    Возвращает короткие уточняющие клинические вопросы НА РУССКОМ ЯЗЫКЕ.
     """
     _ensure_configured()
 
     prompt = (
-        "You are a clinical assistant. Given symptoms text, ask "
-        f"{n} short clarifying questions (no diagnosis). "
-        "Return ONLY a JSON array of strings.\n\n"
-        f"Symptoms: {symptoms}"
+        "Ты — клинический ассистент.\n"
+        "На основе описания симптомов задай "
+        f"{n} коротких уточняющих вопросов.\n"
+        "НЕ ставь диагноз.\n"
+        "Верни ТОЛЬКО JSON-массив строк на русском языке.\n\n"
+        f"Симптомы: {symptoms}"
     )
 
-    # Универсальный формат. Если у вас другой payload — подстрой 2 строки ниже.
     payload = {
         "prompt": prompt,
         "max_tokens": 200,
@@ -39,9 +40,6 @@ def generate_followup_questions(symptoms: str, n: int = 3) -> List[str]:
 
     data = r.json()
 
-    # Под разные реализации:
-    # - иногда приходит {"text": "..."}
-    # - иногда {"choices":[{"text":"..."}]}
     text = None
     if isinstance(data, dict) and "text" in data:
         text = data["text"]
@@ -51,11 +49,10 @@ def generate_followup_questions(symptoms: str, n: int = 3) -> List[str]:
     if not text:
         return [
             "Когда начались симптомы?",
-            "Есть ли температура/давление?",
-            "Есть ли ухудшение со временем?",
+            "Есть ли повышение температуры или давления?",
+            "Есть ли ухудшение состояния со временем?",
         ][:n]
 
-    # Ожидаем JSON-массив строк
     try:
         import json
         arr = json.loads(text)
@@ -67,6 +64,6 @@ def generate_followup_questions(symptoms: str, n: int = 3) -> List[str]:
 
     return [
         "Когда начались симптомы?",
-        "Есть ли температура/давление?",
-        "Есть ли ухудшение со временем?",
+        "Есть ли повышение температуры или давления?",
+        "Есть ли ухудшение состояния со временем?",
     ][:n]
